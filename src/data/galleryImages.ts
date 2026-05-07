@@ -18,6 +18,12 @@ import mart3_3 from "../assets/carousel/mart3-3.jpg";
 import mart3_4 from "../assets/carousel/mart3-4.jpg";
 import mart3_5 from "../assets/carousel/mart3-5.jpg";
 
+import mart4_1 from "../assets/carousel/mart4-1.jpg";
+import mart4_2 from "../assets/carousel/mart4-2.jpg";
+import mart4_3 from "../assets/carousel/mart4-3.jpg";
+import mart4_4 from "../assets/carousel/mart4-4.jpg";
+import mart4_5 from "../assets/carousel/mart4-5.jpg";
+
 import water_refilling_1 from "../assets/carousel/waterrefilling-1.jpg";
 import water_refilling_2 from "../assets/carousel/waterrefilling-2.jpg";
 import water_refilling_3 from "../assets/carousel/waterrefilling-3.jpg";
@@ -69,6 +75,10 @@ export const gallerySections: GallerySection[] = [
   {
     title: "Mart 3",
     images: [mart3_1, mart3_2, mart3_3, mart3_4, mart3_5],
+  },
+  {
+    title: "Mart 4",
+    images: [mart4_1, mart4_2, mart4_3, mart4_4, mart4_5],
   },
   {
     title: "Water Refilling Station",
