@@ -6,6 +6,7 @@ const supabaseKey = (import.meta.env as any).PUBLIC_SUPABASE_ANON_KEY;
 ---
 
 <BaseLayout>
+
 <!-- FORM SECTION -->
 <section class="py-20 bg-slate-50">
   <div class="max-w-3xl mx-auto px-6">
@@ -29,12 +30,36 @@ const supabaseKey = (import.meta.env as any).PUBLIC_SUPABASE_ANON_KEY;
           />
         </div>
 
+        <!-- EMAIL -->
+        <div>
+          <label class="block text-sm font-semibold mb-1">Email</label>
+          <input
+            type="email"
+            id="email"
+            placeholder="Enter your email"
+            maxlength="100"
+            class="w-full border rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-green-600"
+          />
+        </div>
+
+        <!-- CONTACT NUMBER -->
+        <div>
+          <label class="block text-sm font-semibold mb-1">Contact Number</label>
+          <input
+            type="tel"
+            id="contact"
+            placeholder="Enter your contact number"
+            maxlength="30"
+            class="w-full border rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-green-600"
+          />
+        </div>
+
         <!-- MESSAGE -->
         <div>
           <label class="block text-sm font-semibold mb-1">Message</label>
           <textarea
             id="message"
-            placeholder="Write your issue..."
+            placeholder="Write your concern..."
             required
             rows="4"
             maxlength="1000"
@@ -82,13 +107,12 @@ const supabaseKey = (import.meta.env as any).PUBLIC_SUPABASE_ANON_KEY;
   const button = form.querySelector('button')
   const captchaLabel = document.getElementById('captchaLabel')
 
-  // Generate random math question on page load
   let num1 = Math.floor(Math.random() * 9) + 1
   let num2 = Math.floor(Math.random() * 9) + 1
   let answer = num1 + num2
+
   captchaLabel.innerHTML = `What is ${num1} + ${num2}? <span class="text-slate-400 font-normal">(Anti-spam)</span>`
 
-  // Regenerate question after each successful submit
   function refreshCaptcha() {
     num1 = Math.floor(Math.random() * 9) + 1
     num2 = Math.floor(Math.random() * 9) + 1
@@ -101,12 +125,21 @@ const supabaseKey = (import.meta.env as any).PUBLIC_SUPABASE_ANON_KEY;
     e.preventDefault()
 
     const name = document.getElementById('name').value.trim()
+    const email = document.getElementById('email').value.trim()
+    const contact = document.getElementById('contact').value.trim()
     const message = document.getElementById('message').value.trim()
     const captcha = document.getElementById('captcha').value
 
     // Validate name
     if (name.length < 2 || name.length > 100) {
       status.textContent = "Name must be between 2 and 100 characters."
+      status.className = "text-center text-sm text-red-600 font-semibold"
+      return
+    }
+
+    // Validate email 
+    if (email && !email.includes('@')) {
+      status.textContent = "Please enter a valid email."
       status.className = "text-center text-sm text-red-600 font-semibold"
       return
     }
@@ -140,24 +173,22 @@ const supabaseKey = (import.meta.env as any).PUBLIC_SUPABASE_ANON_KEY;
           'Authorization': `Bearer ${supabaseKey}`,
           'Prefer': 'return=minimal'
         },
-        body: JSON.stringify({ name, message })
+        body: JSON.stringify({
+          name,
+          message,
+          email: email || null,
+          contact: contact || null
+        })
       })
 
-      if (res.status === 201 || res.ok) {
+      if (res.ok) {
         status.textContent = "✔ Saved successfully!"
         status.className = "text-center text-sm text-green-600 font-semibold"
         form.reset()
         refreshCaptcha()
       } else {
         const text = await res.text()
-        let errMsg = "Unknown error"
-        try {
-          const data = JSON.parse(text)
-          errMsg = data.message || data.error || text
-        } catch {
-          errMsg = text
-        }
-        status.textContent = "Error: " + errMsg
+        status.textContent = "Error: " + text
         status.className = "text-center text-sm text-red-600 font-semibold"
         refreshCaptcha()
       }
@@ -168,7 +199,7 @@ const supabaseKey = (import.meta.env as any).PUBLIC_SUPABASE_ANON_KEY;
       refreshCaptcha()
     } finally {
       button.disabled = false
-      button.textContent = "Submit Issue"
+      button.textContent = "Submit Concern"
     }
   })
 </script>
