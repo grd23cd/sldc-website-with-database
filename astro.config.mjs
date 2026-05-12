@@ -1,6 +1,6 @@
 import { defineConfig } from 'astro/config';
 import tailwindcss from '@tailwindcss/vite';
-import vercel from '@astrojs/vercel/serverless';  
+import vercel from '@astrojs/vercel';  
 
 const isProd = process.env.NODE_ENV === 'production';
 
