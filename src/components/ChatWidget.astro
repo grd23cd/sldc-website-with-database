@@ -3,28 +3,37 @@ const base = import.meta.env.BASE_URL;
 const membershipLink = `${base}membership`;
 ---
 
-<!-- FLOATING BUTTON -->
-<div class="fixed bottom-6 right-6 flex flex-col items-end z-50">
+<!-- FLOATING BUTTON (DESKTOP ONLY) -->
+<div class="hidden md:flex fixed bottom-6 right-6 flex-col items-end z-50 group">
+
+  <!-- HOVER TEXT (TOOLTIP) -->
+  <div class="mb-3 px-3 py-1 bg-black/80 text-white text-xs rounded-md 
+              opacity-0 group-hover:opacity-100 transition duration-200">
+    FAQ
+  </div>
+
+  <!-- CHAT BUTTON -->
   <button
     id="chatToggle"
-    class="bg-green-700 hover:bg-green-800 text-white w-14 h-14 rounded-full flex items-center justify-center text-2xl shadow-lg"
+    class="bg-green-700 hover:bg-green-800 text-white w-14 h-14 rounded-full 
+           flex items-center justify-center text-2xl shadow-lg"
   >
     💬
   </button>
 </div>
 
-<!-- CHAT WINDOW -->
+<!-- CHAT WINDOW (DESKTOP ONLY) -->
 <div
   id="chatWidget"
-  class="hidden fixed bottom-0 right-0 sm:bottom-24 sm:right-6 
-         w-full sm:w-80 h-[85vh] sm:h-[420px]
+  class="hidden md:fixed md:bottom-24 md:right-6 md:w-80 md:h-[420px]
+         w-full h-[85vh]
          bg-white shadow-2xl border 
          flex flex-col z-50
          rounded-t-xl sm:rounded-xl overflow-hidden"
 >
   <!-- HEADER -->
   <div class="bg-green-700 text-white px-4 py-3 flex justify-between items-center">
-    <span class="font-semibold">Chat Support</span>
+    <span class="font-semibold">FAQ</span>
     <button id="closeChat">✕</button>
   </div>
 
@@ -92,7 +101,6 @@ const membershipLink = `${base}membership`;
         ? "text-right text-green-700 msg"
         : "text-left text-gray-700 msg";
 
-    // Allow HTML only for bot messages
     if (type === "bot") {
       div.innerHTML = text;
     } else {
@@ -161,7 +169,6 @@ const membershipLink = `${base}membership`;
     });
   }
 
-  // OPEN CHAT
   chatToggle.addEventListener("click", () => {
     const isHidden = chatWidget.classList.contains("hidden");
 
@@ -174,7 +181,6 @@ const membershipLink = `${base}membership`;
     }
   });
 
-  // CLOSE CHAT
   closeChat.addEventListener("click", () => {
     chatWidget.classList.add("hidden");
     clearChat();
