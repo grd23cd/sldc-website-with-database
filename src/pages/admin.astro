@@ -14,7 +14,13 @@ import BaseLayout from "../layouts/BaseLayout.astro";
       </h2>
 
       <!-- PRINT BUTTON -->
-      <div id="printSection" class="hidden flex justify-center mt-6">
+      <div id="printSection" class="hidden flex justify-center gap-3 mt-6 flex-wrap">
+        <button
+          id="refreshBtn"
+          class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl shadow-lg transition"
+        >
+          ↻ Refresh Now
+        </button>
         <button
           id="printBtn"
           class="bg-green-700 hover:bg-green-800 text-white px-8 py-3 rounded-xl shadow-lg transition"
@@ -50,9 +56,12 @@ import BaseLayout from "../layouts/BaseLayout.astro";
       <!-- TABLE -->
       <div id="dashboard" class="hidden">
 
-        <p id="status" class="text-center text-sm text-slate-500 mb-4">
-          Loading...
-        </p>
+        <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
+          <p id="status" class="text-sm text-slate-500">
+            Loading...
+          </p>
+          <p id="lastUpdated" class="text-xs text-slate-400"></p>
+        </div>
 
         <div class="overflow-x-auto">
 
@@ -95,15 +104,19 @@ import BaseLayout from "../layouts/BaseLayout.astro";
   const loginStatus  = document.getElementById("loginStatus")
   const table        = document.getElementById("table")
   const status       = document.getElementById("status")
+  const lastUpdated  = document.getElementById("lastUpdated")
   const pagination   = document.getElementById("pagination")
   const printBtn     = document.getElementById("printBtn")
   const printSection = document.getElementById("printSection")
+  const refreshBtn   = document.getElementById("refreshBtn")
 
   const ADMIN_PASSWORD = "admin123"
   const PAGE_SIZE = 10
+  const AUTO_REFRESH_INTERVAL = 30000 // 30 seconds
 
   let allData = []
   let currentPage = 1
+  let refreshTimer = null
 
   // LOGIN
   loginBtn.addEventListener("click", () => {
@@ -116,6 +129,9 @@ import BaseLayout from "../layouts/BaseLayout.astro";
 
       loadData()
 
+      // Auto-refresh every 30 seconds so new entries from other devices appear
+      refreshTimer = setInterval(loadData, AUTO_REFRESH_INTERVAL)
+
     } else {
 
       loginStatus.textContent = "Wrong password"
@@ -124,12 +140,26 @@ import BaseLayout from "../layouts/BaseLayout.astro";
     }
   })
 
-  // LOAD DATA
+  // Allow pressing Enter in password field
+  pass.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") loginBtn.click()
+  })
+
+  // Manual refresh button
+  refreshBtn.addEventListener("click", loadData)
+
+  // LOAD DATA — cache-busting via timestamp query param so browser/server never serves stale data
   async function loadData() {
+
+    status.textContent = "Refreshing..."
+    status.className = "text-sm text-slate-400"
 
     try {
 
-      const res = await fetch("/api/concerns")
+      // Adding ?t=... forces the browser to never use a cached response
+      const res = await fetch("/api/concerns?t=" + Date.now(), {
+        cache: "no-store"        // also tells the browser not to cache
+      })
 
       const data = await res.json()
 
@@ -139,9 +169,12 @@ import BaseLayout from "../layouts/BaseLayout.astro";
 
       allData = data
 
+      // Only reset to page 1 if new data arrived
       currentPage = 1
 
       render()
+
+      lastUpdated.textContent = "Last updated: " + new Date().toLocaleTimeString()
 
     } catch (err) {
 
@@ -162,6 +195,7 @@ import BaseLayout from "../layouts/BaseLayout.astro";
 
     status.textContent =
       `Showing ${start + 1}–${Math.min(start + PAGE_SIZE, allData.length)} of ${allData.length} records`
+    status.className = "text-sm text-slate-500"
 
     // TABLE ROWS
     table.innerHTML = pageData.map(i => `
