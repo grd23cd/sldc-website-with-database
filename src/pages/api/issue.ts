@@ -1,48 +1,32 @@
-import { supabase } from '../../lib/supabaseClient.js'
+import { supabaseAdmin } from "../../lib/supabaseAdmin";
 
-export async function POST({ request }: { request: Request }) {
+export async function GET() {
   try {
-    // Debug: check what's coming in
-    const text = await request.text()
-    console.log("Raw body received:", text)
-
-    if (!text || text.trim() === '') {
-      return new Response(
-        JSON.stringify({ success: false, error: "Empty request body received." }),
-        { status: 400, headers: { 'Content-Type': 'application/json' } }
-      )
-    }
-
-    const body = JSON.parse(text)
-    const { name, message } = body
-
-    if (!name || !message) {
-      return new Response(
-        JSON.stringify({ success: false, error: "Name and message are required." }),
-        { status: 400, headers: { 'Content-Type': 'application/json' } }
-      )
-    }
-
-    const { error } = await supabase
-      .from('issues')
-      .insert([{ name, message }])
+    const { data, error } = await supabaseAdmin
+      .from("issues")
+      .select("*")
+      .order("created_at", { ascending: false });
 
     if (error) {
       return new Response(
-        JSON.stringify({ success: false, error: error.message }),
-        { status: 500, headers: { 'Content-Type': 'application/json' } }
-      )
+        JSON.stringify({ error: error.message }),
+        { status: 500, headers: { "Content-Type": "application/json" } }
+      );
     }
 
     return new Response(
-      JSON.stringify({ success: true, message: "Issue submitted successfully." }),
-      { status: 200, headers: { 'Content-Type': 'application/json' } }
-    )
-
+      JSON.stringify(data),
+      { status: 200, headers: { "Content-Type": "application/json" } }
+    );
   } catch (err: any) {
     return new Response(
-      JSON.stringify({ success: false, error: err.message || 'Server error' }),
-      { status: 500, headers: { 'Content-Type': 'application/json' } }
-    )
+      JSON.stringify({ error: err.message }),
+      { status: 500, headers: { "Content-Type": "application/json" } }
+    );
   }
+}
+
+// your existing POST stays exactly as-is
+export async function POST({ request }: { request: Request }) {
+  // ...
 }

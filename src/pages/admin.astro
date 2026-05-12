@@ -1,0 +1,163 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+---
+
+<BaseLayout>
+
+<section class="py-20 bg-slate-50">
+  <div class="max-w-6xl mx-auto px-6">
+    <div class="bg-white rounded-2xl shadow-md p-8 space-y-6">
+
+      <h2 class="text-2xl font-bold text-center">Admin Dashboard</h2>
+
+      <!-- LOGIN GATE -->
+      <div id="loginBox" class="space-y-3 text-center">
+        <p class="text-sm text-slate-500">Enter admin password</p>
+        <input id="pass" type="password"
+          class="border rounded-xl px-4 py-2 w-full max-w-sm mx-auto block" />
+        <button id="loginBtn" class="bg-green-700 text-white px-6 py-2 rounded-xl">
+          Login
+        </button>
+        <p id="loginStatus" class="text-sm"></p>
+      </div>
+
+      <!-- TABLE -->
+      <div id="dashboard" class="hidden">
+
+        <p id="status" class="text-center text-sm text-slate-500 mb-4">Loading...</p>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm border-collapse">
+            <thead>
+              <tr class="bg-slate-100 text-left">
+                <th class="p-3 border">Name</th>
+                <th class="p-3 border">Email</th>
+                <th class="p-3 border">Contact</th>
+                <th class="p-3 border">Message</th>
+                <th class="p-3 border">Date</th>
+              </tr>
+            </thead>
+            <tbody id="table"></tbody>
+          </table>
+        </div>
+
+        <!-- PAGINATION -->
+        <div id="pagination" class="flex items-center justify-center gap-2 mt-6 flex-wrap"></div>
+
+      </div>
+    </div>
+  </div>
+</section>
+
+<script is:inline>
+  const loginBox    = document.getElementById("loginBox")
+  const dashboard   = document.getElementById("dashboard")
+  const loginBtn    = document.getElementById("loginBtn")
+  const pass        = document.getElementById("pass")
+  const loginStatus = document.getElementById("loginStatus")
+  const table       = document.getElementById("table")
+  const status      = document.getElementById("status")
+  const pagination  = document.getElementById("pagination")
+
+  const ADMIN_PASSWORD = "admin123"
+  const PAGE_SIZE = 10
+
+  let allData = []
+  let currentPage = 1
+
+  loginBtn.addEventListener("click", () => {
+    if (pass.value === ADMIN_PASSWORD) {
+      loginBox.classList.add("hidden")
+      dashboard.classList.remove("hidden")
+      loadData()
+    } else {
+      loginStatus.textContent = "Wrong password"
+      loginStatus.className = "text-red-600 text-sm"
+    }
+  })
+
+  async function loadData() {
+    try {
+      const res = await fetch("/api/issue")
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error)
+
+      allData = data
+      currentPage = 1
+      render()
+
+    } catch (err) {
+      status.textContent = "Error: " + err.message
+      status.className = "text-red-600 text-sm"
+    }
+  }
+
+  function render() {
+    const totalPages = Math.ceil(allData.length / PAGE_SIZE)
+    const start = (currentPage - 1) * PAGE_SIZE
+    const pageData = allData.slice(start, start + PAGE_SIZE)
+
+    status.textContent =
+      `Showing ${start + 1}–${Math.min(start + PAGE_SIZE, allData.length)} of ${allData.length} records`
+
+    // Rows
+    table.innerHTML = pageData.map(i => `
+      <tr class="border-t hover:bg-slate-50">
+        <td class="p-3 border">${i.name || "-"}</td>
+        <td class="p-3 border">${i.email || "-"}</td>
+        <td class="p-3 border">${i.contact || "-"}</td>
+        <td class="p-3 border whitespace-pre-wrap">${i.message}</td>
+        <td class="p-3 border text-xs text-slate-500">
+          ${new Date(i.created_at).toLocaleString()}
+        </td>
+      </tr>
+    `).join("")
+
+    // Pagination
+    pagination.innerHTML = ""
+
+    if (totalPages <= 1) return
+
+    const btn = (label, page, disabled, active) => {
+      const b = document.createElement("button")
+      b.textContent = label
+      b.disabled = disabled
+      b.className = [
+        "px-3 py-1 rounded-lg text-sm border transition",
+        active
+          ? "bg-green-700 text-white border-green-700"
+          : "bg-white text-slate-700 border-slate-300 hover:bg-slate-100",
+        disabled ? "opacity-40 cursor-not-allowed" : ""
+      ].join(" ")
+      if (!disabled) b.addEventListener("click", () => { currentPage = page; render() })
+      return b
+    }
+
+    const dots = () => {
+      const s = document.createElement("span")
+      s.textContent = "..."
+      s.className = "px-1 text-slate-400 text-sm"
+      return s
+    }
+
+    // Build the set of page numbers to show
+    const pages = new Set([1, totalPages])
+    for (let p = currentPage - 1; p <= currentPage + 1; p++) {
+      if (p >= 1 && p <= totalPages) pages.add(p)
+    }
+    const sortedPages = [...pages].sort((a, b) => a - b)
+
+    pagination.appendChild(btn("← Prev", currentPage - 1, currentPage === 1, false))
+
+    sortedPages.forEach((p, idx) => {
+      if (idx > 0 && p - sortedPages[idx - 1] > 1) {
+        pagination.appendChild(dots())
+      }
+      pagination.appendChild(btn(p, p, false, p === currentPage))
+    })
+
+    pagination.appendChild(btn("Next →", currentPage + 1, currentPage === totalPages, false))
+  }
+</script>
+
+</BaseLayout>
