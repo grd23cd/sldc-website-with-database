@@ -15,7 +15,7 @@ const supabaseKey = (import.meta.env as any).PUBLIC_SUPABASE_ANON_KEY;
 
       <h2 class="text-2xl font-bold text-center">Submit a Concern</h2>
 
-      <form id="issueForm" class="space-y-4">
+      <form id="concernForm" class="space-y-4">
 
         <!-- NAME -->
         <div>
@@ -102,7 +102,7 @@ const supabaseKey = (import.meta.env as any).PUBLIC_SUPABASE_ANON_KEY;
 
 <!-- SCRIPT -->
 <script is:inline define:vars={{ supabaseUrl, supabaseKey }}>
-  const form = document.getElementById('issueForm')
+  const form = document.getElementById('concernForm')
   const status = document.getElementById('status')
   const button = form.querySelector('button')
   const captchaLabel = document.getElementById('captchaLabel')
@@ -165,7 +165,7 @@ const supabaseKey = (import.meta.env as any).PUBLIC_SUPABASE_ANON_KEY;
     button.textContent = "Sending..."
 
     try {
-      const res = await fetch(`${supabaseUrl}/rest/v1/issues`, {
+      const res = await fetch(`${supabaseUrl}/rest/v1/concerns`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
