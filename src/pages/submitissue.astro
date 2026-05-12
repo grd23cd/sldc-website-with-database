@@ -1,0 +1,176 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+const base = import.meta.env.BASE_URL;
+const supabaseUrl = (import.meta.env as any).PUBLIC_SUPABASE_URL;
+const supabaseKey = (import.meta.env as any).PUBLIC_SUPABASE_ANON_KEY;
+---
+
+<BaseLayout>
+<!-- FORM SECTION -->
+<section class="py-20 bg-slate-50">
+  <div class="max-w-3xl mx-auto px-6">
+
+    <div class="bg-white rounded-2xl shadow-md p-8 space-y-6">
+
+      <h2 class="text-2xl font-bold text-center">Submit an Issue</h2>
+
+      <form id="issueForm" class="space-y-4">
+
+        <!-- NAME -->
+        <div>
+          <label class="block text-sm font-semibold mb-1">Name</label>
+          <input
+            type="text"
+            id="name"
+            placeholder="Enter your name"
+            required
+            maxlength="100"
+            class="w-full border rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-green-600"
+          />
+        </div>
+
+        <!-- MESSAGE -->
+        <div>
+          <label class="block text-sm font-semibold mb-1">Message</label>
+          <textarea
+            id="message"
+            placeholder="Write your issue..."
+            required
+            rows="4"
+            maxlength="1000"
+            class="w-full border rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-green-600"
+          ></textarea>
+          <p class="text-xs text-slate-400 mt-1 text-right">Max 1000 characters</p>
+        </div>
+
+        <!-- CAPTCHA -->
+        <div>
+          <label id="captchaLabel" class="block text-sm font-semibold mb-1">
+            Loading question... <span class="text-slate-400 font-normal">(Anti-spam)</span>
+          </label>
+          <input
+            type="number"
+            id="captcha"
+            placeholder="Enter answer"
+            required
+            class="w-full border rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-green-600"
+          />
+        </div>
+
+        <!-- BUTTON -->
+        <button
+          type="submit"
+          class="w-full bg-green-700 hover:bg-green-600 text-white font-semibold py-3 rounded-xl transition"
+        >
+          Submit Issue
+        </button>
+
+        <!-- STATUS -->
+        <p id="status" class="text-center text-sm"></p>
+
+      </form>
+
+    </div>
+
+  </div>
+</section>
+
+<!-- SCRIPT -->
+<script is:inline define:vars={{ supabaseUrl, supabaseKey }}>
+  const form = document.getElementById('issueForm')
+  const status = document.getElementById('status')
+  const button = form.querySelector('button')
+  const captchaLabel = document.getElementById('captchaLabel')
+
+  // Generate random math question on page load
+  let num1 = Math.floor(Math.random() * 9) + 1
+  let num2 = Math.floor(Math.random() * 9) + 1
+  let answer = num1 + num2
+  captchaLabel.innerHTML = `What is ${num1} + ${num2}? <span class="text-slate-400 font-normal">(Anti-spam)</span>`
+
+  // Regenerate question after each successful submit
+  function refreshCaptcha() {
+    num1 = Math.floor(Math.random() * 9) + 1
+    num2 = Math.floor(Math.random() * 9) + 1
+    answer = num1 + num2
+    captchaLabel.innerHTML = `What is ${num1} + ${num2}? <span class="text-slate-400 font-normal">(Anti-spam)</span>`
+    document.getElementById('captcha').value = ''
+  }
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault()
+
+    const name = document.getElementById('name').value.trim()
+    const message = document.getElementById('message').value.trim()
+    const captcha = document.getElementById('captcha').value
+
+    // Validate name
+    if (name.length < 2 || name.length > 100) {
+      status.textContent = "Name must be between 2 and 100 characters."
+      status.className = "text-center text-sm text-red-600 font-semibold"
+      return
+    }
+
+    // Validate message
+    if (message.length < 5 || message.length > 1000) {
+      status.textContent = "Message must be between 5 and 1000 characters."
+      status.className = "text-center text-sm text-red-600 font-semibold"
+      return
+    }
+
+    // Validate captcha
+    if (parseInt(captcha) !== answer) {
+      status.textContent = "Incorrect answer. Please try again."
+      status.className = "text-center text-sm text-red-600 font-semibold"
+      refreshCaptcha()
+      return
+    }
+
+    status.textContent = "Sending..."
+    status.className = "text-center text-sm text-slate-500"
+    button.disabled = true
+    button.textContent = "Sending..."
+
+    try {
+      const res = await fetch(`${supabaseUrl}/rest/v1/issues`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': supabaseKey,
+          'Authorization': `Bearer ${supabaseKey}`,
+          'Prefer': 'return=minimal'
+        },
+        body: JSON.stringify({ name, message })
+      })
+
+      if (res.status === 201 || res.ok) {
+        status.textContent = "✔ Saved successfully!"
+        status.className = "text-center text-sm text-green-600 font-semibold"
+        form.reset()
+        refreshCaptcha()
+      } else {
+        const text = await res.text()
+        let errMsg = "Unknown error"
+        try {
+          const data = JSON.parse(text)
+          errMsg = data.message || data.error || text
+        } catch {
+          errMsg = text
+        }
+        status.textContent = "Error: " + errMsg
+        status.className = "text-center text-sm text-red-600 font-semibold"
+        refreshCaptcha()
+      }
+
+    } catch (err) {
+      status.textContent = "Request failed: " + err.message
+      status.className = "text-center text-sm text-red-600 font-semibold"
+      refreshCaptcha()
+    } finally {
+      button.disabled = false
+      button.textContent = "Submit Issue"
+    }
+  })
+</script>
+
+</BaseLayout>
